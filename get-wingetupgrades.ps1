@@ -5,15 +5,15 @@
     Calls "winget upgrade" and return a list of programs that have a 
     version number 0.1 larger than the currently installed version
 .OUTPUTS
-    A list of programs as customobjects. The keys are Name, ID, Version1, Version2
+    A list of programs as customobjects. The keys are Name, ID, Installed, Version
 .EXAMPLE
     ./get-wingetupgrades.ps1
     The script doesn't take any arguments
 .EXAMPLE    
-    .\get-wingetupgrades.ps1 | where Version1 -gt 10
+    .\get-wingetupgrades.ps1 | where Installed -gt 10
     Filter the output. Only show entries that has a version number larger than 10
 .EXAMPLE
-    .\get-wingetupgrades.ps1 | select ID, Version1 | Format-Table -AutoSize    
+    .\get-wingetupgrades.ps1 | select ID, Installed | Format-Table -AutoSize    
 .NOTES
     Version 1.0: 2024-12-12
 .LINK
@@ -54,7 +54,6 @@ foreach ($line in $lines) {
     if ($flag -eq $false) {
         continue
     }
-    # TODO filter away complicated lines for now. Find a better way to handke these lines
     if ($line.Length -lt 100) {
         continue
     }
@@ -77,8 +76,8 @@ foreach ($line in $lines) {
             $obj = [PSCustomObject]@{
                 Name     = $name
                 ID       = $id
-                Version1 = $v1
-                Version2 = $v2
+                Installed = $v1
+                Version = $v2
             }
             $a += $obj
         }
