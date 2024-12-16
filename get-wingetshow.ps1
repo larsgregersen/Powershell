@@ -16,9 +16,28 @@ https://github.com/mgajda83/PSWinGet/blob/main/Find-WinGetPackage.ps1
 param(
     [string]$argname
 )
-$argname = "pptservice"
+$argname = "power"
 
 Set-StrictMode -Version 3
+
+function countwide([string]$str, [int]$maxlen) {
+    $idx = $maxlen
+    $s = 0
+    for ($i = 0; $i -lt $maxlen; $i++) {
+        if ($str.Substring($i, 1) -match '[\p{IsCJKUnifiedIdeographs}]') {
+            $s += 2
+        }
+        else {
+            $s += 1
+        }
+
+        if ($s -ge $maxlen) {
+            $idx = $i
+            break
+        }
+    }
+    return $idx
+}
 
 # Is winget installed?
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -49,15 +68,15 @@ if ($list.Count -gt 1) {
             continue
         }
         elseif ($matchidx -eq -1) {
-            $name = $list[$i].Substring($nameidx, $ididx - $nameidx - 1)
-            $chinesecharcount = ($name -replace '[^\p{IsCJKUnifiedIdeographs}]', '').Length
-            if ($chinesecharcount -gt 0) {
-                Write-Verbose $list[$i]
-                Write-Verbose $chinesecharcount
-                $id = $list[$i].Substring($ididx-$chinesecharcount, $versionidx - $ididx - $chinesecharcount - 1)
-                $Version = $list[$i].Substring($versionidx-$chinesecharcount, $sourceidx - $versionidx - $chinesecharcount- 1)
+            $name = $list[$i].Substring(0, $ididx - 1)
+            if ($name -match '[\p{IsCJKUnifiedIdeographs}]') {
+                $count = countwide $name $ididx
+                $name = $list[$i].Substring(0, $count)
+                $offset = $ididx - $count - 1
+                $id = $list[$i].Substring($ididx - $offset, $versionidx - $ididx - 1)
+                $Version = $list[$i].Substring($versionidx - $offset, $sourceidx - $versionidx - 1)
                 $Match = ""
-                $Source = $list[$i].Substring($sourceidx-$chinesecharcount)    
+                $Source = $list[$i].Substring($sourceidx - $offset)
             }
             else {
                 $id = $list[$i].Substring($ididx, $versionidx - $ididx - 1)
@@ -66,12 +85,23 @@ if ($list.Count -gt 1) {
                 $Source = $list[$i].Substring($sourceidx)    
             }
         }
-        else {
+        else {            
             $name = $list[$i].Substring($nameidx, $ididx - $nameidx - 1)
-            $id = $list[$i].Substring($ididx, $versionidx - $ididx - 1)
-            $Version = $list[$i].Substring($versionidx, $matchidx - $versionidx - 1)
-            $Match = $list[$i].Substring($matchidx, $sourceidx - $matchidx - 1)
-            $Source = $list[$i].Substring($sourceidx)
+            if ($name -match '[\p{IsCJKUnifiedIdeographs}]') {
+                $count = countwide $name $ididx
+                $name = $list[$i].Substring(0, $count)
+                $offset = $ididx - $count - 1
+                $id = $list[$i].Substring($ididx - $offset, $versionidx - $ididx - 1)
+                $Version = $list[$i].Substring($versionidx - $offset, $sourceidx - $matchidx - 1)
+                $Match = $list[$i].Substring($matchidx - $offset, $sourceidx - $matchidx - 1)
+                $Source = $list[$i].Substring($sourceidx - $offset)
+            }
+            else {
+                $id = $list[$i].Substring($ididx, $versionidx - $ididx - 1)
+                $Version = $list[$i].Substring($versionidx, $matchidx - $versionidx - 1)
+                $Match = $list[$i].Substring($matchidx, $sourceidx - $matchidx - 1)
+                $Source = $list[$i].Substring($sourceidx)
+            }
         }
 
         if ($id -eq $argname) {
