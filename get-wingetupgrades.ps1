@@ -9,13 +9,13 @@
 .EXAMPLE
     ./get-wingetupgrades.ps1
     The script doesn't take any arguments
-.EXAMPLE    
+.EXAMPLE
     .\get-wingetupgrades.ps1 | where Installed -gt 10
     Filter the output. Only show entries that has a version number larger than 10
 .EXAMPLE
     .\get-wingetupgrades.ps1 | select ID, Installed | Format-Table -AutoSize    
 .NOTES
-    Version 1.0: 2024-12-12
+    Version 1.1: 2024-12-12
 .LINK
     https://learn.microsoft.com/en-us/windows/package-manager/winget/
 #>
@@ -45,6 +45,11 @@ $lines = $c -split "`r`n" | Where-Object { $_ -ne "" }
 
 $a = @()
 
+$ididx = $lines[6].IndexOf("Id")
+$versionidx = $lines[6].IndexOf("Version")
+$availableidx = $lines[6].IndexOf("Available")
+$sourceidx = $lines[6].IndexOf("Source")
+
 $flag = $false
 foreach ($line in $lines) {
     if ($line -match "----") {
@@ -57,11 +62,15 @@ foreach ($line in $lines) {
     if ($line.Length -lt 100) {
         continue
     }
+    if ($line -match "package\(s\) have version numbers that cannot be determined") {
+        continue
+    }
     
-    $name = $line.Substring(0, 44).Trim()
-    $id = $line.Substring(44, 39).Trim()            
-    $v1 = $line.Substring(82, 15).Trim()
-    $v2 = $line.Substring(97, 15).Trim()
+    Write-Debug $line
+    $name = $line.Substring(0, $ididx-1).Trim()
+    $id = $line.Substring($ididx, $versionidx-$ididx-1).Trim()            
+    $v1 = $line.Substring($versionidx, $availableidx-$versionidx-1).Trim()
+    $v2 = $line.Substring($availableidx, $sourceidx-$availableidx-1).Trim()
 
     if ($v1.Length -gt 3) {
         if ($v1.StartsWith("< ")) {
