@@ -45,10 +45,26 @@ $lines = $c -split "`r`n" | Where-Object { $_ -ne "" }
 
 $a = @()
 
-$ididx = $lines[6].IndexOf("Id")
-$versionidx = $lines[6].IndexOf("Version")
-$availableidx = $lines[6].IndexOf("Available")
-$sourceidx = $lines[6].IndexOf("Source")
+$headeridx = -1
+for ($i = 0; $i -lt [math]::min(10,$lines.Count); $i++) {
+    if ($lines[$i] -match "Available") {
+        $headeridx = $i
+        break
+    }
+}
+if ($headeridx -eq -1) {
+    write-error "Could not find the header"
+    exit 1
+}
+
+$ididx = $lines[$headeridx].IndexOf("Id")
+$versionidx = $lines[$headeridx].IndexOf("Version")
+$availableidx = $lines[$headeridx].IndexOf("Available")
+$sourceidx = $lines[$headeridx].IndexOf("Source")
+if ($ididx -eq -1) {
+    write-error "Could not find the Id column"
+    exit 2
+}
 
 $flag = $false
 foreach ($line in $lines) {
