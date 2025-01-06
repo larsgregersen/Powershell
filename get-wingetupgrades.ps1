@@ -39,19 +39,22 @@ Write-Verbose "Getting list of programs"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $c = winget upgrade
 Write-Verbose "Comparing versions..."
+Write-debug ($c -join "`n")
 
 # Split the output into an array where each element is a line of output
 $lines = $c -split "`r`n" | Where-Object { $_ -ne "" }
-
-$a = @()
+write-debug "lines count: $($lines.Count)"
+write-debug ($lines -join "`n")
 
 $headeridx = -1
-for ($i = 0; $i -lt [math]::min(10,$lines.Count); $i++) {
+for ($i = 0; $i -lt [math]::min(50,$lines.Count); $i++) {
     if ($lines[$i] -match "Available") {
         $headeridx = $i
         break
     }
 }
+write-debug "headeridx: $headeridx"
+
 if ($headeridx -eq -1) {
     write-error "Could not find the header"
     exit 1
@@ -66,6 +69,7 @@ if ($ididx -eq -1) {
     exit 2
 }
 
+$a = @()
 $flag = $false
 foreach ($line in $lines) {
     if ($line -match "----") {
