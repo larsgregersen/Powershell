@@ -47,7 +47,7 @@ write-debug "lines count: $($lines.Count)"
 write-debug ($lines -join "`n")
 
 $headeridx = -1
-for ($i = 0; $i -lt [math]::min(50,$lines.Count); $i++) {
+for ($i = 0; $i -lt [math]::min(75,$lines.Count); $i++) {
     if ($lines[$i] -match "Available") {
         $headeridx = $i
         break
