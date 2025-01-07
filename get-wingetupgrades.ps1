@@ -23,7 +23,7 @@
 # Support for -Debug and -Verbose
 [CmdletBinding()]
 param(
-
+    [int]$minorchange = 1
 )
 
 Set-StrictMode -Version 3
@@ -101,7 +101,7 @@ foreach ($line in $lines) {
         $v1v = New-Object -TypeName System.Version -ArgumentList $v1
         $v2v = New-Object -TypeName System.Version -ArgumentList $v2
 
-        if ($v2v.Major -gt $v1v.Major -or $v2v.Minor -ge $v1v.Minor + 1) {
+        if ($v2v.Major -gt $v1v.Major -or $v2v.Minor -ge $v1v.Minor + $minorchange) {
             $obj = [PSCustomObject]@{
                 Name     = $name
                 ID       = $id
