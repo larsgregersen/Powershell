@@ -3,19 +3,23 @@
     Get a list of program that should be upgraded using winget
 .DESCRIPTION
     Calls "winget upgrade" and return a list of programs that have a 
-    version number 0.1 larger than the currently installed version
+    minor version number 1+ larger than the currently installed version. Use the parameter
+    -minorchange to select how much larger the minor version number must be.
 .OUTPUTS
     A list of programs as customobjects. The keys are Name, ID, Installed, Version
 .EXAMPLE
     ./get-wingetupgrades.ps1
-    The script doesn't take any arguments
+    Run without any arguments
+.EXAMPLE
+    ./get-wingetupgrades.ps1 -minorchange 2
+    Only print programs where the minor version number has changed value 2 or more
 .EXAMPLE
     .\get-wingetupgrades.ps1 | where Installed -gt 10
     Filter the output. Only show entries that has a version number larger than 10
 .EXAMPLE
     .\get-wingetupgrades.ps1 | select ID, Installed | Format-Table -AutoSize    
 .NOTES
-    Version 1.1: 2024-12-12
+    Version 1.2: 2025-01-07
 .LINK
     https://learn.microsoft.com/en-us/windows/package-manager/winget/
 #>
