@@ -100,6 +100,8 @@ foreach ($line in $lines) {
         if ($v1.StartsWith("< ")) {
             $v1 = $v1.Substring(2);
         }
+        $v1 = $v1 -replace "^v", ""
+        $v2 = $v2 -replace "^v", ""
         $v1 = $v1 -replace " \((\d+)\)", '.$1'
         $v2 = $v2 -replace " \((\d+)\)", '.$1'
         $v1v = New-Object -TypeName System.Version -ArgumentList $v1
