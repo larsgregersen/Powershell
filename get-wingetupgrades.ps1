@@ -109,6 +109,7 @@ foreach ($line in $lines) {
         $v2 = $v2 -replace "^v", ""
         $v1 = $v1 -replace " \((\d+)\)", '.$1'
         $v2 = $v2 -replace " \((\d+)\)", '.$1'
+        $v1 = $v1 -replace " \(\w+\s+\d+\)", ''
         $v1v = New-Object -TypeName System.Version -ArgumentList $v1
         $v2v = New-Object -TypeName System.Version -ArgumentList $v2
 
