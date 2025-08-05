@@ -110,6 +110,9 @@ foreach ($line in $lines) {
         $v1 = $v1 -replace " \((\d+)\)", '.$1'
         $v2 = $v2 -replace " \((\d+)\)", '.$1'
         $v1 = $v1 -replace " \(\w+\s+\d+\)", ''
+        if (-not ($v2 -match "\.")) {
+            $v2 = $v2 + ".0";
+        }
         $v1v = New-Object -TypeName System.Version -ArgumentList $v1
         $v2v = New-Object -TypeName System.Version -ArgumentList $v2
 
