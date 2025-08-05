@@ -51,7 +51,7 @@ write-debug "lines count: $($lines.Count)"
 write-debug ($lines -join "`n")
 
 $headeridx = -1
-for ($i = 0; $i -lt [math]::min(75,$lines.Count); $i++) {
+for ($i = 0; $i -lt [math]::min(75, $lines.Count); $i++) {
     if ($lines[$i] -match "Available") {
         $headeridx = $i
         break
@@ -91,11 +91,16 @@ foreach ($line in $lines) {
     }
     
     Write-Debug $line
-    $name = $line.Substring(0, $ididx-1).Trim()
-    $id = $line.Substring($ididx, $versionidx-$ididx-1).Trim()            
-    $v1 = $line.Substring($versionidx, $availableidx-$versionidx-1).Trim()
-    $v2 = $line.Substring($availableidx, $sourceidx-$availableidx-1).Trim()
-
+    $name = $line.Substring(0, $ididx - 1).Trim()
+    $id = $line.Substring($ididx, $versionidx - $ididx - 1).Trim()       
+    try {
+        $v1 = $line.Substring($versionidx, $availableidx - $versionidx - 1).Trim()
+        $v2 = $line.Substring($availableidx, $sourceidx - $availableidx - 1).Trim()
+    }
+    catch {
+        Write-Error "Could not parse line: $line"
+    }
+    
     if ($v1.Length -gt 3) {
         if ($v1.StartsWith("< ")) {
             $v1 = $v1.Substring(2);
@@ -109,10 +114,10 @@ foreach ($line in $lines) {
 
         if ($v2v.Major -gt $v1v.Major -or $v2v.Minor -ge $v1v.Minor + $minorchange) {
             $obj = [PSCustomObject]@{
-                Name     = $name
-                ID       = $id
+                Name      = $name
+                ID        = $id
                 Installed = $v1
-                Version = $v2
+                Version   = $v2
             }
             $a += $obj
         }
