@@ -61,6 +61,8 @@ write-debug "headeridx: $headeridx"
 
 if ($headeridx -eq -1) {
     write-error "Could not find the header"
+    Out-File -FilePath "c:\temp\upgrade.log" -InputObject $lines
+    Write-Error "Log file written to c:\temp\upgrade.log"
     exit 1
 }
 
