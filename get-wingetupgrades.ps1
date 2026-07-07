@@ -51,7 +51,7 @@ write-debug "lines count: $($lines.Count)"
 write-debug ($lines -join "`n")
 
 $headeridx = -1
-for ($i = 0; $i -lt [math]::min(75, $lines.Count); $i++) {
+for ($i = 0; $i -lt [math]::min(150, $lines.Count); $i++) {
     if ($lines[$i] -match "Available") {
         $headeridx = $i
         break
@@ -110,11 +110,24 @@ foreach ($line in $lines) {
         $v1 = $v1 -replace " \((\d+)\)", '.$1'
         $v2 = $v2 -replace " \((\d+)\)", '.$1'
         $v1 = $v1 -replace " \(\w+\s+\d+\)", ''
+        $v1 = $v1 -replace "[a-z]", ''
+        $v1 = $v1 -replace "\+.*$", ''
+        $v2 = $v2 -replace "\+.*$", ''
         if (-not ($v2 -match "\.")) {
             $v2 = $v2 + ".0";
         }
+
+        Write-Debug "v1: $v1"
+        Write-Debug "v2: $v2"
+
+        try {
         $v1v = New-Object -TypeName System.Version -ArgumentList $v1
         $v2v = New-Object -TypeName System.Version -ArgumentList $v2
+        }
+        catch {
+            Write-Error "$line Could not parse version numbers: $v1, $v2"
+            continue
+        }
 
         if ($v2v.Major -gt $v1v.Major -or $v2v.Minor -ge $v1v.Minor + $minorchange) {
             $obj = [PSCustomObject]@{
