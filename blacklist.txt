@@ -1,0 +1,7 @@
+Google.Chrome
+GoTo.GoTo
+Microsoft.SQLServer.2012.NativeClient
+Microsoft.VisualStudio.Enterprise    
+Microsoft.WindowsPCHealthCheck       
+Microsoft.WindowsTerminal            
+Zoom.Zoom.EXE      
