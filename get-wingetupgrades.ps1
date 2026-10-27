@@ -38,6 +38,14 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# Read blacklist file
+$blacklistfile = "blacklist.txt"
+if (Test-Path $blacklistfile) {
+    $bl = (Get-Content $blacklistfile).Trim()
+} else {
+    $bl = ""
+}
+
 # Run the winget upgrade command and capture its output
 Write-Verbose "Getting list of programs"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -61,6 +69,8 @@ write-debug "headeridx: $headeridx"
 
 if ($headeridx -eq -1) {
     write-error "Could not find the header"
+    Out-File -FilePath "c:\temp\upgrade.log" -InputObject $lines
+    Write-Error "Log file written to c:\temp\upgrade.log"
     exit 1
 }
 
@@ -92,7 +102,13 @@ foreach ($line in $lines) {
     
     Write-Debug $line
     $name = $line.Substring(0, $ididx - 1).Trim()
-    $id = $line.Substring($ididx, $versionidx - $ididx - 1).Trim()       
+    $id = $line.Substring($ididx, $versionidx - $ididx - 1).Trim()
+
+    # Skip entry if it is in the blacklist
+    if ($bl -eq $id) {
+        continue
+    }
+    
     try {
         $v1 = $line.Substring($versionidx, $availableidx - $versionidx - 1).Trim()
         $v2 = $line.Substring($availableidx, $sourceidx - $availableidx - 1).Trim()
