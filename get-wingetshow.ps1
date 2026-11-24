@@ -1,10 +1,19 @@
 <#
 Use the Microsoft.WinGet.Client PowerShell module:
+
 This module provides cmdlets to interact with Winget. You can install and use it as follows:
-powershell
   Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Force
   Import-Module Microsoft.WinGet.Client
-  Get-WinGetPackage
+  Get-Command -Module Microsoft.WinGet.Client
+  Get-WinGetPackage # Lists installed packages
+  Update-WinGetPackage
+  Get-WinGetVersion
+  Install-WinGetPackage
+  Find-WinGetPackage
+
+  Get-InstalledModule Microsoft.WinGet.Client
+
+https://www.powershellgallery.com/packages/Microsoft.WinGet.Client
 
 https://powershellisfun.com/2024/11/28/using-the-powershell-winget-module/
 
@@ -14,30 +23,47 @@ https://github.com/mgajda83/PSWinGet/blob/main/Find-WinGetPackage.ps1
 # Support for -Debug and -Verbose
 [CmdletBinding()]
 param(
-    [string]$argname
+    [string]$argname,
+    [switch]$releasenotes = $false
 )
-$argname = "power"
+#$argname = 'dngrep'
 
 Set-StrictMode -Version 3
 
-function countwide([string]$str, [int]$maxlen) {
-    $idx = $maxlen
-    $s = 0
-    for ($i = 0; $i -lt $maxlen; $i++) {
-        if ($str.Substring($i, 1) -match '[\p{IsCJKUnifiedIdeographs}]') {
-            $s += 2
-        }
-        else {
-            $s += 1
-        }
+function read-showcontent($lines) {
+    Write-Verbose "Extracting data"
+    Write-Verbose $lines.Count
 
-        if ($s -ge $maxlen) {
-            $idx = $i
-            break
+    $properties = [ordered]@{}
+    $currentProperty = $null
+
+    foreach ($line in $lines) {
+        if ($line -match "Release Date: (.*)") {
+            $properties['Release Date'] = $matches[1]
+        }
+        
+        if ($line -match "^(\w[^:]+):(.*)$") {
+            $key = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            $currentProperty = $key
+            if ($value) {
+                $properties[$key] = $value
+            }
+        }
+        elseif ($line.Trim() -and $currentProperty) {
+            if ($properties[$currentProperty]) {
+                $properties[$currentProperty] += "`n" + $line.Trim()
+            }
+            else {
+                $properties[$currentProperty] = $line.Trim()
+            }
         }
     }
-    return $idx
+
+    $customObject = [PSCustomObject]$properties
+    return $customObject
 }
+
 
 # Is winget installed?
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -46,121 +72,36 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 }
 
 Write-Verbose "Getting list of programs that match '$argname'"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$list = winget search $argname
-if ($list -match "No package found") {
-    write-error "No package matching $argname was found"
-    exit 2
-} 
-if ($list.Count -gt 1) {
-    Write-Verbose "More than one match for '$argname'"
-    $nameidx = $list[4].IndexOf("Name")
-    $ididx = $list[4].IndexOf("Id")
-    $versionidx = $list[4].IndexOf("Version")
-    $matchidx = $list[4].IndexOf("Match")
-    $sourceidx = $list[4].IndexOf("Source")
-    $a = @()
-    $found = ""
-    for ($i = 6; $i -lt $list.Count; $i++) {
-        if ($sourceidx -gt $list[$i].Length) {
-            Write-Verbose "Problematic line: "
-            Write-Verbose $list[$i]
-            continue
-        }
-        elseif ($matchidx -eq -1) {
-            $name = $list[$i].Substring(0, $ididx - 1)
-            if ($name -match '[\p{IsCJKUnifiedIdeographs}]') {
-                $count = countwide $name $ididx
-                $name = $list[$i].Substring(0, $count)
-                $offset = $ididx - $count - 1
-                $id = $list[$i].Substring($ididx - $offset, $versionidx - $ididx - 1)
-                $Version = $list[$i].Substring($versionidx - $offset, $sourceidx - $versionidx - 1)
-                $Match = ""
-                $Source = $list[$i].Substring($sourceidx - $offset)
-            }
-            else {
-                $id = $list[$i].Substring($ididx, $versionidx - $ididx - 1)
-                $Version = $list[$i].Substring($versionidx, $sourceidx - $versionidx - 1)
-                $Match = ""
-                $Source = $list[$i].Substring($sourceidx)    
-            }
-        }
-        else {            
-            $name = $list[$i].Substring($nameidx, $ididx - $nameidx - 1)
-            if ($name -match '[\p{IsCJKUnifiedIdeographs}]') {
-                $count = countwide $name $ididx
-                $name = $list[$i].Substring(0, $count)
-                $offset = $ididx - $count - 1
-                $id = $list[$i].Substring($ididx - $offset, $versionidx - $ididx - 1)
-                $Version = $list[$i].Substring($versionidx - $offset, $sourceidx - $matchidx - 1)
-                $Match = $list[$i].Substring($matchidx - $offset, $sourceidx - $matchidx - 1)
-                $Source = $list[$i].Substring($sourceidx - $offset)
-            }
-            else {
-                $id = $list[$i].Substring($ididx, $versionidx - $ididx - 1)
-                $Version = $list[$i].Substring($versionidx, $matchidx - $versionidx - 1)
-                $Match = $list[$i].Substring($matchidx, $sourceidx - $matchidx - 1)
-                $Source = $list[$i].Substring($sourceidx)
-            }
-        }
+#[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-        if ($id -eq $argname) {
-            Write-Verbose "'$argname' is a perfect id match for '$name'"
-            $found = $id
-            break
-        }
+$list = Find-WinGetPackage $argname
 
-        $obj = [PSCustomObject]@{
-            Name    = $name
-            ID      = $id
-            Version = $version
-            Match   = $Match
-            Source  = $Source
-        }
-        $a += $obj
-    }
-    if (-not $found) {
-        return $a
-    }
+if ($null -eq $list) {
+    Write-Error "Package '$argname' not found"
+    exit 2    
 }
 
-Write-Verbose "Getting content using winget for {$argname}"
-$content = winget show $argname
-
-if ($content -match "No package found") {
-    Write-Error "No package found"
-    exit 2
-}
-if ($content -match "Multiple packages found") {
-    Write-Error "Multiple packages found"
-    exit 3
-}
-
-Write-Verbose "Extracting data"
-$lines = $content -split "`n"
-
-$properties = [ordered]@{}
-$currentProperty = $null
-
-foreach ($line in $lines) {
-    if ($line -match "^(\w[^:]+):(.*)$") {
-        $key = $matches[1].Trim()
-        $value = $matches[2].Trim()
-        $currentProperty = $key
-        if ($value) {
-            $properties[$key] = $value
-        }
+if ($list -isnot [array]) {
+    # Exactly one match
+    Write-Verbose "One packages found"
+    Write-Verbose "Getting content using winget for $($list.id)"
+    $content = winget show $list.id
+    write-verbose $content.GetType().FullName
+    # Useful fields: Version, Publisher, Publisher Url, Author, Description, Release Notes Url
+    $data = read-showcontent($content)
+    if ($releasenotes) {
+        $data | format-list -Property Publisher, homepage, Version, 'Release Date', Description, 'Release Notes Url', 'release notes'
     }
-    elseif ($line.Trim() -and $currentProperty) {
-        if ($properties[$currentProperty]) {
-            $properties[$currentProperty] += "`n" + $line.Trim()
-        }
-        else {
-            $properties[$currentProperty] = $line.Trim()
-        }
+    else {
+        $data | format-list -Property Publisher, homepage, Version, 'Release Date', Description
     }
 }
-
-$customObject = [PSCustomObject]$properties
-
-$customObject
+else {
+    # Multiple packages found
+    Write-Verbose "Multiple packages found"
+    $list | ft -wrap -AutoSize
+    $installedpackage = Get-WinGetPackage $argname
+    if ($null -ne $installedpackage) {
+        write-output "Installed package: $($installedpackage.id) ($($installedpackage.InstalledVersion))"
+    }
+}
