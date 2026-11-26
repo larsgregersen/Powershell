@@ -99,9 +99,16 @@ if ($list -isnot [array]) {
 else {
     # Multiple packages found
     Write-Verbose "Multiple packages found"
-    $list | ft -wrap -AutoSize
+    Write-Verbose $list.Count
+    $list | ft -AutoSize
     $installedpackage = Get-WinGetPackage $argname
     if ($null -ne $installedpackage) {
-        write-output "Installed package: $($installedpackage.id) ($($installedpackage.InstalledVersion))"
+        if ($installedpackage -is [array] -and $installedpackage.Count -ge 2) {
+            write-output "Installed packages:"
+        }
+        else {
+            write-output "Installed package:"
+        }
+        $installedpackage | ft -Wrap -AutoSize
     }
 }
